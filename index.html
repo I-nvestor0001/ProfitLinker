@@ -1,0 +1,1821 @@
+<div class="form-link">
+                    Don't have an account? <a href="#" onclick="closeModal('loginModal'); showModal('registerModal'); return false;">Register here</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Investment Modal -->
+    <div id="investModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('investModal')">&times;</button>
+            <div class="modal-header">
+                <h2>Make Investment</h2>
+                <p>Start growing your wealth today</p>
+            </div>
+            <form id="investForm">
+                <div class="form-group">
+                    <label>Investment Amount (₦)</label>
+                    <input type="number" name="amount" placeholder="Enter amount" required min="1000">
+                </div>
+                <div class="form-group">
+                    <label>Payment Proof</label>
+                    <textarea name="paymentProof" rows="3" placeholder="Enter transaction reference or payment details" required></textarea>
+                </div>
+                <div style="background: var(--light-blue); padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
+                    <p style="font-weight: 600; color: var(--primary-blue); margin-bottom: 0.5rem;">Payment Details:</p>
+                    <p style="color: var(--text-dark);">Account: 6141876934 (OPAY)</p>
+                    <p style="color: var(--text-gray); font-size: 0.9rem; margin-top: 0.5rem;">Make payment and provide transaction details above</p>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Investment</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Withdrawal Modal -->
+    <div id="withdrawalModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('withdrawalModal')">&times;</button>
+            <div class="modal-header">
+                <h2>Request Withdrawal</h2>
+                <p>Get your earnings paid out</p>
+            </div>
+            <form id="withdrawalForm">
+                <div class="form-group">
+                    <label>Amount (₦)</label>
+                    <input type="number" name="amount" placeholder="Enter withdrawal amount" required min="500">
+                </div>
+                <div class="form-group">
+                    <label>Bank Name</label>
+                    <input type="text" name="bankName" placeholder="e.g., GTBank, Access Bank" required>
+                </div>
+                <div class="form-group">
+                    <label>Account Number</label>
+                    <input type="text" name="accountNumber" placeholder="10-digit account number" required>
+                </div>
+                <div class="form-group">
+                    <label>Account Name</label>
+                    <input type="text" name="accountName" placeholder="Account holder name" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Request</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- User Dashboard -->
+    <div id="userDashboard" class="dashboard">
+        <div class="container">
+            <div class="dashboard-header">
+                <h1 class="dashboard-welcome">Welcome back, <span id="userName"></span>! 👋</h1>
+                <p class="dashboard-subtitle">Here's your investment overview</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="userBalance">₦0</div>
+                            <div class="stat-label">Total Balance</div>
+                        </div>
+                        <div class="stat-icon">💰</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="userInvested">₦0</div>
+                            <div class="stat-label">Total Invested</div>
+                        </div>
+                        <div class="stat-icon">📊</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="userReferrals">0</div>
+                            <div class="stat-label">Total Referrals</div>
+                        </div>
+                        <div class="stat-icon">👥</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="userEarnings">₦0</div>
+                            <div class="stat-label">Referral Earnings</div>
+                        </div>
+                        <div class="stat-icon">🎁</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Your Referral Link</h3>
+                </div>
+                <div class="referral-box">
+                    <p style="margin-bottom: 1rem;">Share this code and earn commissions!</p>
+                    <div class="referral-code">
+                        <span id="userRefCode">Loading...</span>
+                        <button class="copy-btn" onclick="copyReferralCode()">Copy</button>
+                    </div>
+                    <p style="font-size: 0.9rem; opacity: 0.9;">Earn for every successful referral</p>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                <button class="btn btn-primary" onclick="showModal('investModal')" style="padding: 1rem;">💎 New Investment</button>
+                <button class="btn btn-success" onclick="showModal('withdrawalModal')" style="padding: 1rem;">💸 Request Withdrawal</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">My Investments</h3>
+                </div>
+                <div id="userInvestmentsList"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Withdrawal History</h3>
+                </div>
+                <div id="userWithdrawalsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" class="dashboard">
+        <div class="container">
+            <div class="dashboard-header">
+                <h1 class="dashboard-welcome">Admin Dashboard 🔐</h1>
+                <p class="dashboard-subtitle">Manage all users and transactions</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="totalUsers">0</div>
+                            <div class="stat-label">Total Users</div>
+                        </div>
+                        <div class="stat-icon">👥</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="totalInvestments">0</div>
+                            <div class="stat-label">Total Investments</div>
+                        </div>
+                        <div class="stat-icon">📊</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="totalInvested">₦0</div>
+                            <div class="stat-label">Total Amount</div>
+                        </div>
+                        <div class="stat-icon">💰</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="pendingWithdrawals">0</div>
+                            <div class="stat-label">Pending Withdrawals</div>
+                        </div>
+                        <div class="stat-icon">⏳</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('users')">👥 Users</button>
+                <button class="tab" onclick="switchTab('investments')">📊 Investments</button>
+                <button class="tab" onclick="switchTab('withdrawals')">💸 Withdrawals</button>
+            </div>
+
+            <div id="usersTab" class="tab-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">All Users</h3>
+                    </div>
+                    <div id="adminUsersList"></div>
+                </div>
+            </div>
+
+            <div id="investmentsTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">All Investments</h3>
+                    </div>
+                    <div id="adminInvestmentsList"></div>
+                </div>
+            </div>
+
+            <div id="withdrawalsTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Withdrawal Requests</h3>
+                    </div>
+                    <div id="adminWithdrawalsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <h3 style="margin-bottom: 1rem;">ProfitLinker</h3>
+            <p style="margin-bottom: 1rem;">Invest Smart, Earn More</p>
+            <div style="margin: 1.5rem 0;">
+                <a href="#" onclick="showPage('home')">Home</a>
+                <a href="#" onclick="showPage('how')">How It Works</a>
+                <a href="#" onclick="showModal('loginModal')">Login</a>
+            </div>
+            <p style="margin-top: 2rem; opacity: 0.7;">&copy; 2024 ProfitLinker. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Admin Credentials
+        const ADMIN_EMAIL = 'admin@profitlinker.com';
+        const ADMIN_PASSWORD = 'AdminPL2024!';
+
+        // State
+        let currentUser = null;
+        let users = [];
+        let investments = [];
+        let withdrawals = [];
+
+        // Initialize
+        window.onload = async () => {
+            await loadData();
+            checkAuth();
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('hidden');
+            }, 1000);
+        };
+
+        // Auto refresh admin dashboard
+        setInterval(async () => {
+            if (currentUser?.isAdmin) {
+                await loadData();
+                updateAdminDashboard();
+            }
+        }, 5000);
+
+        // Load data from storage
+        async function loadData() {
+            try {
+                const [u, i, w, cu] = await Promise.all([
+                    window.storage.get('pl_users', true),
+                    window.storage.get('pl_investments', true),
+                    window.storage.get('pl_withdrawals', true),
+                    window.storage.get('pl_current_user', false)
+                ]);
+
+                if (u?.value) users = JSON.parse(u.value);
+                if (i?.value) investments = JSON.parse(i.value);
+                if (w?.value) withdrawals = JSON.parse(w.value);
+                if (cu?.value) {
+                    currentUser = JSON.parse(cu.value);
+                    checkAuth();
+                }
+            } catch (e) {
+                console.log('First load');
+            }
+        }
+
+        // Save data to storage
+        async function saveData() {
+            try {
+                await window.storage.set('pl_users', JSON.stringify(users), true);
+                await window.storage.set('pl_investments', JSON.stringify(investments), true);
+                await window.storage.set('pl_withdrawals', JSON.stringify(withdrawals), true);
+                if (currentUser) {
+                    await window.storage.set('pl_current_user', JSON.stringify(currentUser), false);
+                }
+            } catch (e) {
+                console.error('Save error:', e);
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('notificationContainer');
+            const div = document.createElement('div');
+            div.className = `notification ${type}`;
+            div.innerHTML = `<span style="font-size: 1.5rem;">${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'}</span> ${message}`;
+            container.appendChild(div);
+            setTimeout(() => div.remove(), 4000);
+        }
+
+        // Modal functions
+        function showModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        // Page navigation
+        function showPage(page) {
+            document.querySelectorAll('.page, .dashboard').forEach(p => p.classList.remove('active'));
+            document.getElementById(page + 'Page').classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        // Register
+        document.getElementById('registerForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const email = fd.get('email').toLowerCase();
+
+            if (users.find(u => u.email === email)) {
+                showNotification('Email already registered!', 'error');
+                return;
+            }
+
+            const refCode = 'PL' + Math.random().toString(36).substr(2, 8).toUpperCase();
+            const user = {
+                id: Date.now(),
+                name: fd.get('name'),
+                email: email,
+                phone: fd.get('phone'),
+                password: fd.get('password'),
+                referralCode: refCode,
+                referredBy: fd.get('referralCode').toUpperCase() || null,
+                balance: 0,
+                totalInvested: 0,
+                referralCount: 0,
+                referralEarnings: 0,
+                created: new Date().toISOString()
+            };
+
+            users.push(user);
+            await saveData();
+            
+            showNotification(`Welcome ${user.name}! Registration successful.`);
+            closeModal('registerModal');
+            e.target.reset();
+            showModal('loginModal');
+        };
+
+        // Login
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const email = fd.get('email').toLowerCase();
+            const password = fd.get('password');
+
+            // Check admin
+            if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+                currentUser = { email: ADMIN_EMAIL, name: 'Admin', isAdmin: true };
+                await saveData();
+                showNotification('Admin login successful!');
+                closeModal('loginModal');
+                showDashboard();
+                return;
+            }
+
+            // Check user
+            const user = users.find(u => u.email === email && u.password === password);
+            if (user) {
+                currentUser = user;
+                await saveData();
+                showNotification(`Welcome back, ${user.name}!`);
+                closeModal('loginModal');
+                showDashboard();
+            } else {
+                showNotification('Invalid email or password!', 'error');
+            }
+        };
+
+        // Investment
+        document.getElementById('investForm').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!currentUser || currentUser.isAdmin) return;
+
+            const fd = new FormData(e.target);
+            const investment = {
+                id: Date.now(),
+                userId: currentUser.id,
+                userName: currentUser.name,
+                userEmail: currentUser.email,
+                userPhone: currentUser.phone,
+                amount: parseInt(fd.get('amount')),
+                paymentProof: fd.get('paymentProof'),
+                status: 'Pending',
+                created: new Date().toISOString()
+            };
+
+            investments.push(investment);
+            await saveData();
+            
+            showNotification('Investment submitted! Awaiting approval.');
+            closeModal('investModal');
+            e.target.reset();
+            updateUserDashboard();
+        };
+
+        // Withdrawal
+        document.getElementById('withdrawalForm').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!currentUser || currentUser.isAdmin) return;
+
+            const fd = new FormData(e.target);
+            const amount = parseInt(fd.get('amount'));
+
+            // Calculate user balance
+            const userInv = investments.filter(i => i.userId === currentUser.id && i.status === 'Approved');
+            const totalInvested = userInv.reduce((sum, i) => sum + i.amount, 0);
+            const referralEarnings = currentUser.referralCount * 500; // ₦500 per referral
+            const balance = totalInvested + referralEarnings;
+
+            if (amount > balance) {
+                showNotification('Insufficient balance!', 'error');
+                return;
+            }
+
+            const withdrawal = {
+                id: Date.now(),
+                userId: currentUser.id,
+                userName: currentUser.name,
+                userEmail: currentUser.email,
+                userPhone: currentUser.phone,
+                amount: amount,
+                bankName: fd.get('bankName'),
+                accountNumber: fd.get('accountNumber'),
+                accountName: fd.get('accountName'),
+                status: 'Pending',
+                created: new Date().toISOString()
+            };
+
+            withdrawals.push(withdrawal);
+            await saveData();
+            
+            showNotification('Withdrawal request submitted!');
+            closeModal('withdrawalModal');
+            e.target.reset();
+            updateUserDashboard();
+        };
+
+        // Check auth
+        function checkAuth() {
+            if (currentUser) {
+                document.getElementById('loginNav').style.display = 'none';
+                document.getElementById('registerNav').style.display = 'none';
+                document.getElementById('dashboardNav').style.display = 'block';
+                document.getElementById('logoutNav').style.display = 'block';
+            } else {
+                document.getElementById('loginNav').style.display = 'block';
+                document.getElementById('registerNav').style.display = 'block';
+                document.getElementById('dashboardNav').style.display = 'none';
+                document.getElementById('logoutNav').style.display = 'none';
+            }
+        }
+
+        // Show dashboard
+        function showDashboard() {
+            if (!currentUser) {
+                showNotification('Please login first!', 'warning');
+                showModal('loginModal');
+                return;
+            }
+
+            document.querySelectorAll('.page, .dashboard').forEach(p => p.classList.remove('active'));
+
+            if (currentUser.isAdmin) {
+                document.getElementById('adminDashboard').classList.add('active');
+                updateAdminDashboard();
+            } else {
+                document.getElementById('userDashboard').classList.add('active');
+                updateUserDashboard();
+            }
+            
+            window.scrollTo(0, 0);
+        }
+
+        // Update user dashboard
+        function updateUserDashboard() {
+            if (!currentUser || currentUser.isAdmin) return;
+
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userRefCode').textContent = currentUser.referralCode;
+
+            const userInv = investments.filter(i => i.userId === currentUser.id);
+            const userWith = withdrawals.filter(w => w.userId === currentUser.id);
+            const approved = userInv.filter(i => i.status === 'Approved');
+
+            const totalInvested = approved.reduce((sum, i) => sum + i.amount, 0);
+            const referralEarnings = currentUser.referralCount * 500;
+            const balance = totalInvested + referralEarnings;
+
+            document.getElementById('userBalance').textContent = '₦' + balance.toLocaleString();
+            document.getElementById('userInvested').textContent = '₦' + totalInvested.toLocaleString();
+            document.getElementById('userReferrals').textContent = currentUser.referralCount || 0;
+            document.getElementById('userEarnings').textContent = '₦' + referralEarnings.toLocaleString();
+
+            // Investments list
+            const invList = document.getElementById('userInvestmentsList');
+            if (userInv.length === 0) {
+                invList.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><p>No investments yet</p></div>';
+            } else {
+                invList.innerHTML = userInv.map(i => `
+                    <div class="item">
+                        <div class="item-header">
+                            <div class="item-title">₦${i.amount.toLocaleString()}</div>
+                            <span class="badge badge-${i.status.toLowerCase()}">${i.status}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Date</span>
+                            <span class="info-value">${new Date(i.created).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Withdrawals list
+            const withList = document.getElementById('userWithdrawalsList');
+            if (userWith.length === 0) {
+                withList.innerHTML = '<div class="empty-state"><div class="empty-icon">💸</div><p>No withdrawals yet</p></div>';
+            } else {
+                withList.innerHTML = userWith.map(w => `
+                    <div class="item">
+                        <div class="item-header">
+                            <div class="item-title">₦${w.amount.toLocaleString()}</div>
+                            <span class="badge badge-${w.status.toLowerCase()}">${w.status}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Bank</span>
+                            <span class="info-value">${w.bankName}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Account</span>
+                            <span class="info-value">${w.accountNumber}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Date</span>
+                            <span class="info-value">${new Date(w.created).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Update admin dashboard
+        function updateAdminDashboard() {
+            const totalInvestedAmount = investments.filter(i => i.status === 'Approved').reduce((sum, i) => sum + i.amount, 0);
+            const pendingWith = withdrawals.filter(w => w.status === 'Pending').length;
+
+            document.getElementById('totalUsers').textContent = users.length;
+            document.getElementById('totalInvestments').textContent = investments.length;
+            document.getElementById('totalInvested').textContent = '₦' + totalInvestedAmount.toLocaleString();
+            document.getElementById('pendingWithdrawals').textContent = pendingWith;
+
+            // Users list
+            const usersList = document.getElementById('adminUsersList');
+            if (users.length === 0) {
+                usersList.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><p>No users yet</p></div>';
+            } else {
+                usersList.innerHTML = users.map(u => {
+                    const userInv = investments.filter(i => i.userId === u.id && i.status === 'Approved');
+                    const totalInv = userInv.reduce((sum, i) => sum + i.amount, 0);
+
+                    return `
+                        <div class="item">
+                            <div class="item-title">${u.name}</div>
+                            <div class="info-row">
+                                <span class="info-label">Email</span>
+                                <span class="info-value">${u.email}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Phone</span>
+                                <span class="info-value">${u.phone}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Referral Code</span>
+                                <span class="info-value">${u.referralCode}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Total Invested</span>
+                                <span class="info-value">₦${totalInv.toLocaleString()}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Referrals</span>
+                                <span class="info-value">${u.referralCount || 0}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Joined</span>
+                                <span class="info-value">${new Date(u.created).toLocaleDateString()}</span>
+                            </div>
+                            <div class="action-buttons">
+                                <button class="btn btn-danger" onclick="deleteUser(${u.id})">Delete User</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Investments list
+            const invList = document.getElementById('adminInvestmentsList');
+            if (investments.length === 0) {
+                invList.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><p>No investments yet</p></div>';
+            } else {
+                invList.innerHTML = investments.map(i => `
+                    <div class="item">
+                        <div class="item-header">
+                            <div class="item-title">${i.userName} - ₦${i.amount.toLocaleString()}</div>
+                            <span class="badge badge-${i.status.toLowerCase()}">${i.status}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Email</span>
+                            <span class="info-value">${i.userEmail}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Phone</span>
+                            <span class="info-value">${i.userPhone}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Payment Proof</span>
+                            <span class="info-value">${i.paymentProof}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Date</span>
+                            <span class="info-value">${new Date(i.created).toLocaleDateString()}</span>
+                        </div>
+                        ${i.status === 'Pending' ? `
+                            <div class="action-buttons">
+                                <button class="btn btn-success" onclick="approveInvestment(${i.id})">Approve</button>
+                                <button class="btn btn-danger" onclick="rejectInvestment(${i.id})">Reject</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            }
+
+            // Withdrawals list
+            const withList = document.getElementById('adminWithdrawalsList');
+            if (withdrawals.length === 0) {
+                withList.innerHTML = '<div class="empty-state"><div class="empty-icon">💸</div><p>No withdrawals yet</p></div>';
+            } else {
+                withList.innerHTML = withdrawals.map(w => `
+                    <div class="item">
+                        <div class="item-header">
+                            <div class="item-title">${w.userName} - ₦${w.amount.toLocaleString()}</div>
+                            <span class="badge badge-${w.status.toLowerCase()}">${w.status}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Email</span>
+                            <span class="info-value">${w.userEmail}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Bank</span>
+                            <span class="info-value">${w.bankName}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Account Number</span>
+                            <span class="info-value">${w.accountNumber}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Account Name</span>
+                            <span class="info-value">${w.accountName}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Date</span>
+                            <span class="info-value">${new Date(w.created).toLocaleDateString()}</span>
+                        </div>
+                        ${w.status === 'Pending' ? `
+                            <div class="action-buttons">
+                                <button class="btn btn-success" onclick="markPaid(${w.id})">Mark as Paid</button>
+                                <button class="btn btn-danger" onclick="rejectWithdrawal(${w.id})">Reject</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Approve investment
+        async function approveInvestment(id) {
+            const inv = investments.find(i => i.id === id);
+            if (!inv) return;
+
+            inv.status = 'Approved';
+
+            // Credit referrer
+            if (inv.referredBy) {
+                const referrer = users.find(u => u.referralCode === inv.referredBy);
+                if (referrer) {
+                    referrer.referralCount = (referrer.referralCount || 0) + 1;
+                }
+            }
+
+            await saveData();
+            showNotification('Investment approved!');
+            updateAdminDashboard();
+        }
+
+        // Reject investment
+        async function rejectInvestment(id) {
+            const inv = investments.find(i => i.id === id);
+            if (!inv) return;
+
+            inv.status = 'Rejected';
+            await saveData();
+            showNotification('Investment rejected!', 'warning');
+            updateAdminDashboard();
+        }
+
+        // Mark withdrawal as paid
+        async function markPaid(id) {
+            const w = withdrawals.find(w => w.id === id);
+            if (!w) return;
+
+            w.status = 'Completed';
+            await saveData();
+            showNotification('Withdrawal marked as paid!');
+            updateAdminDashboard();
+        }
+
+        // Reject withdrawal
+        async function rejectWithdrawal(id) {
+            const w = withdrawals.find(w => w.id === id);
+            if (!w) return;
+
+            w.status = 'Rejected';
+            await saveData();
+            showNotification('Withdrawal rejected!', 'warning');
+            updateAdminDashboard();
+        }
+
+        // Delete user
+        async function deleteUser(id) {
+            const user = users.find(u => u.id === id);
+            if (!user) return;
+
+            if (!confirm(`Delete ${user.name}? This will remove all their data.`)) return;
+
+            users = users.filter(u => u.id !== id);
+            investments = investments.filter(i => i.userId !== id);
+            withdrawals = withdrawals.filter(w => w.userId !== id);
+
+            await saveData();
+            showNotification('User deleted!');
+            updateAdminDashboard();
+        }
+
+        // Switch admin tabs
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tab + 'Tab').classList.add('active');
+        }
+
+        // Copy referral code
+        function copyReferralCode() {
+            const code = document.getElementById('userRefCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                showNotification('Referral code copied!');
+            }).catch(() => {
+                showNotification('Failed to copy', 'error');
+            });
+        }
+
+        // Logout
+        async function logout() {
+            if (!confirm('Are you sure you want to logout?')) return;
+
+            currentUser = null;
+            await window.storage.delete('pl_current_user', false);
+            
+            checkAuth();
+            document.querySelectorAll('.page, .dashboard').forEach(p => p.classList.remove('active'));
+            document.getElementById('homePage').classList.add('active');
+            
+            showNotification('Logged out successfully!');
+            window.scrollTo(0, 0);
+        }
+
+        // Close modal on outside click
+        window.onclick = (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+            }
+        };
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProfitLinker - Invest Smart, Earn More</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #0066FF;
+            --dark-blue: #0052CC;
+            --light-blue: #E6F2FF;
+            --white: #FFFFFF;
+            --text-dark: #1A1A1A;
+            --text-gray: #6B7280;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --border: #E5E7EB;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background: #F9FAFB;
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-blue);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            color: white;
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Header */
+        .header {
+            background: var(--white);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-blue);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-blue);
+        }
+
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--dark-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,102,255,0.3);
+        }
+
+        .btn-outline {
+            border: 2px solid var(--primary-blue);
+            color: var(--primary-blue);
+            background: transparent;
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
+            color: white;
+            padding: 150px 2rem 100px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            top: -250px;
+            right: -250px;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            bottom: -150px;
+            left: -150px;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .hero-tagline {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .hero-description {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            opacity: 0.85;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 5rem 2rem;
+            background: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+            font-weight: 700;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-gray);
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            border: 2px solid var(--border);
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .feature-card:hover {
+            border-color: var(--primary-blue);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,102,255,0.1);
+        }
+
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            background: var(--light-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
+            color: var(--text-dark);
+        }
+
+        .feature-card p {
+            color: var(--text-gray);
+            line-height: 1.6;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 5rem 2rem;
+            background: var(--light-blue);
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .step-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: var(--primary-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            max-width: 450px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .modal-header h2 {
+            color: var(--text-dark);
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-header p {
+            color: var(--text-gray);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.8rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: var(--text-gray);
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: var(--light-blue);
+            color: var(--primary-blue);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.9rem;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+
+        .form-link {
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--text-gray);
+        }
+
+        .form-link a {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .form-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Dashboard */
+        .dashboard {
+            display: none;
+            min-height: 100vh;
+            padding-top: 90px;
+            padding-bottom: 3rem;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .dashboard-header {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .dashboard-welcome {
+            font-size: 1.8rem;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-subtitle {
+            color: var(--text-gray);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.8rem;
+            border-radius: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 2px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--primary-blue);
+            transform: translateY(-3px);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--light-blue);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.3rem;
+        }
+
+        .stat-label {
+            color: var(--text-gray);
+            font-size: 0.95rem;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 2px solid var(--border);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        .referral-box {
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+            padding: 2rem;
+            border-radius: 16px;
+            color: white;
+            text-align: center;
+        }
+
+        .referral-code {
+            background: white;
+            color: var(--primary-blue);
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin: 1rem 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .copy-btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: var(--dark-blue);
+        }
+
+        .item {
+            background: var(--light-blue);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--primary-blue);
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.8rem;
+        }
+
+        .item-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-dark);
+        }
+
+        .badge {
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-pending {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .badge-completed {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .badge-rejected {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-gray);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            color: white;
+            z-index: 3000;
+            animation: slideInRight 0.4s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            min-width: 300px;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification.success {
+            background: var(--success);
+        }
+
+        .notification.error {
+            background: var(--danger);
+        }
+
+        .notification.warning {
+            background: var(--warning);
+        }
+
+        /* Admin Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-gray);
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            color: var(--primary-blue);
+        }
+
+        .tab.active {
+            color: var(--primary-blue);
+            border-bottom-color: var(--primary-blue);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Page visibility */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--text-dark);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+            margin-top: 5rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+            margin: 0 1rem;
+        }
+
+        .footer a:hover {
+            color: var(--primary-blue);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+
+            .hero-tagline {
+                font-size: 1.2rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger:hover {
+            background: #DC2626;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .info-label {
+            color: var(--text-gray);
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loader"></div>
+        <div class="loading-text">ProfitLinker</div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="nav-container">
+            <div class="logo">
+                <div class="logo-icon">₱</div>
+                ProfitLinker
+            </div>
+            <ul class="nav-links" id="navLinks">
+                <li><a onclick="showPage('home')">Home</a></li>
+                <li><a onclick="showPage('how')">How It Works</a></li>
+                <li id="dashboardNav" style="display: none;"><a onclick="showDashboard()">Dashboard</a></li>
+                <li id="loginNav"><a onclick="showModal('loginModal')" class="btn btn-outline">Login</a></li>
+                <li id="registerNav"><a onclick="showModal('registerModal')" class="btn btn-primary">Get Started</a></li>
+                <li id="logoutNav" style="display: none;"><a onclick="logout()" class="btn btn-danger">Logout</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <!-- Home Page -->
+    <div id="homePage" class="page active">
+        <!-- Hero -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Invest Smart, Earn More</h1>
+                <p class="hero-tagline">Your Gateway to Financial Freedom</p>
+                <p class="hero-description">Join thousands of smart investors growing their wealth through our secure and profitable platform. Start investing today and watch your money grow!</p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" onclick="showModal('registerModal')" style="font-size: 1.1rem; padding: 1rem 2.5rem;">Start Investing Now</button>
+                    <button class="btn btn-outline" onclick="showPage('how')" style="font-size: 1.1rem; padding: 1rem 2.5rem; background: white; border-color: white; color: var(--primary-blue);">Learn More</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section class="features">
+            <div class="container">
+                <h2 class="section-title">Why Choose ProfitLinker?</h2>
+                <p class="section-subtitle">Experience the best investment platform with guaranteed returns</p>
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🔒</div>
+                        <h3>100% Secure</h3>
+                        <p>Your investments are protected with bank-level security and encryption technology</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💰</div>
+                        <h3>High Returns</h3>
+                        <p>Earn competitive returns on your investments with guaranteed payouts</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Instant Withdrawals</h3>
+                        <p>Request and receive your earnings within 24 hours directly to your bank</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">👥</div>
+                        <h3>Refer & Earn</h3>
+                        <p>Invite friends and earn generous commissions on every successful referral</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h3>Mobile Friendly</h3>
+                        <p>Manage your investments anytime, anywhere from any device</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h3>Simple & Easy</h3>
+                        <p>User-friendly interface designed for everyone, no experience needed</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- How It Works Page -->
+    <div id="howPage" class="page">
+        <section class="how-it-works" style="padding-top: 120px;">
+            <div class="container">
+                <h2 class="section-title">How ProfitLinker Works</h2>
+                <p class="section-subtitle">Start earning in 4 simple steps</p>
+                
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h3>Create Account</h3>
+                        <p>Sign up in minutes with your basic information. It's quick, easy, and completely free!</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h3>Make Investment</h3>
+                        <p>Choose an investment amount that suits you and make a secure deposit to start earning.</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h3>Refer Friends</h3>
+                        <p>Share your unique referral link with friends and family to earn extra commissions.</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">4</div>
+                        <h3>Withdraw Earnings</h3>
+                        <p>Request withdrawal anytime and receive your profits directly to your bank account.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('registerModal')">&times;</button>
+            <div class="modal-header">
+                <h2>Create Your Account</h2>
+                <p>Join ProfitLinker and start earning today!</p>
+            </div>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="name" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" placeholder="your.email@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" name="phone" placeholder="080XXXXXXXX" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" placeholder="Create a strong password" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>Referral Code (Optional)</label>
+                    <input type="text" name="referralCode" placeholder="Enter referral code if you have one">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
+                <div class="form-link">
+                    Already have an account? <a href="#" onclick="closeModal('registerModal'); showModal('loginModal'); return false;">Login here</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('loginModal')">&times;</button>
+            <div class="modal-header">
+                <h2>Welcome Back!</h2>
+                <p>Login to your ProfitLinker account</p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" placeholder="your.email@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                <div class="form-link">

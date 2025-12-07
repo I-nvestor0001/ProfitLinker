@@ -1,842 +1,803 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Users, TrendingUp, LogOut, Menu, X, Copy, Check, AlertCircle } from 'lucide-react';
+import { AlertCircle, Users, TrendingUp, Wallet, LogOut, UserPlus, Trash2, DollarSign, CheckCircle, XCircle } from 'lucide-react';
 
-const ProfitLinker = () => {
-  const [currentPage, setCurrentPage] = useState('home');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+const InvestAndEarnPro = () => {
   const [currentUser, setCurrentUser] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
-  
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [regName, setRegName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regPassword, setRegPassword] = useState('');
-  const [regReferrer, setRegReferrer] = useState('');
-  const [investAmount, setInvestAmount] = useState('');
-  const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [message, setMessage] = useState({ text: '', type: '' });
-
-  useEffect(() => {
-    initializeApp();
-  }, []);
-
-  const initializeApp = async () => {
-    await initAdmin();
-    await loadUserSession();
-    
-    const params = new URLSearchParams(window.location.search);
-    const refCode = params.get('ref');
-    if (refCode) {
-      setRegReferrer(refCode);
-    }
-  };
-
-  const initAdmin = async () => {
-    try {
-      await window.storage.get('user:admin@profitlinker.com');
-    } catch (error) {
-      const admin = {
-        id: 'admin',
-        name: 'Admin',
-        email: 'admin@profitlinker.com',
-        password: 'admin123',
-        referralCode: 'ADMIN',
-        balance: 0,
-        totalInvested: 0,
-        referralEarnings: 0,
-        referrals: [],
-        withdrawals: [],
-        createdAt: new Date().toISOString()
-      };
-      await window.storage.set('user:admin@profitlinker.com', JSON.stringify(admin));
-      
-      let usersList = [];
-      try {
-        const usersData = await window.storage.get('users_list');
-        usersList = JSON.parse(usersData.value);
-      } catch (e) {}
-      if (!usersList.includes('admin@profitlinker.com')) {
-        usersList.push('admin@profitlinker.com');
-        await window.storage.set('users_list', JSON.stringify(usersList));
-      }
-    }
-  };
-
-  const loadUserSession = async () => {
-    try {
-      const sessionData = await window.storage.get('current_session');
-      if (sessionData) {
-        const session = JSON.parse(sessionData.value);
-        const userData = await window.storage.get(`user:${session.userId}`);
-        if (userData) {
-          const user = JSON.parse(userData.value);
-          setCurrentUser(user);
-          setIsLoggedIn(true);
-          setIsAdmin(user.email === 'admin@profitlinker.com');
-          setCurrentPage(user.email === 'admin@profitlinker.com' ? 'admin' : 'dashboard');
-        }
-      }
-    } catch (error) {
-      console.log('No active session');
-    }
-  };
-
-  const showMessage = (text, type = 'success') => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage({ text: '', type: '' }), 4000);
-  };
-
-  const handleRegister = async () => {
-    if (!regName || !regEmail || !regPassword) {
-      showMessage('Please fill all fields', 'error');
-      return;
-    }
-
-    try {
-      try {
-        await window.storage.get(`user:${regEmail}`);
-        showMessage('Email already registered', 'error');
-        return;
-      } catch (error) {}
-
-      const userId = `user_${Date.now()}`;
-      const referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-      
-      const newUser = {
-        id: userId,
-        name: regName,
-        email: regEmail,
-        password: regPassword,
-        referralCode,
-        referredBy: regReferrer || null,
-        balance: 0,
-        totalInvested: 0,
-        referralEarnings: 0,
-        referrals: [],
-        withdrawals: [],
-        createdAt: new Date().toISOString()
-      };
-
-      await window.storage.set(`user:${regEmail}`, JSON.stringify(newUser));
-      
-      let usersList = [];
-      try {
-        const usersData = await window.storage.get('users_list');
-        usersList = JSON.parse(usersData.value);
-      } catch (error) {}
-      usersList.push(regEmail);
-      await window.storage.set('users_list', JSON.stringify(usersList));
-
-      if (regReferrer) {
-        try {
-          const allUsers = await getAllUsers();
-          const referrer = allUsers.find(u => u.referralCode === regReferrer);
-          if (referrer) {
-            referrer.referrals.push(userId);
-            referrer.referralEarnings += 10;
-            referrer.balance += 10;
-            await window.storage.set(`user:${referrer.email}`, JSON.stringify(referrer));
-          }
-        } catch (error) {
-          console.log('Could not update referrer');
-        }
-      }
-
-      showMessage('Registration successful! Please login.', 'success');
-      setCurrentPage('login');
-      setRegName('');
-      setRegEmail('');
-      setRegPassword('');
-      setRegReferrer('');
-    } catch (error) {
-      showMessage('Registration failed. Please try again.', 'error');
-    }
-  };
-
-  const handleLogin = async () => {
-    if (!loginEmail || !loginPassword) {
-      showMessage('Please enter email and password', 'error');
-      return;
-    }
-
-    try {
-      const userData = await window.storage.get(`user:${loginEmail}`);
-      const user = JSON.parse(userData.value);
-      
-      if (user.password === loginPassword) {
-        setCurrentUser(user);
-        setIsLoggedIn(true);
-        setIsAdmin(user.email === 'admin@profitlinker.com');
-        
-        await window.storage.set('current_session', JSON.stringify({ userId: loginEmail }));
-        
-        setCurrentPage(user.email === 'admin@profitlinker.com' ? 'admin' : 'dashboard');
-        setLoginEmail('');
-        setLoginPassword('');
-        showMessage('Login successful!', 'success');
-      } else {
-        showMessage('Invalid password', 'error');
-      }
-    } catch (error) {
-      showMessage('User not found', 'error');
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await window.storage.delete('current_session');
-    } catch (error) {}
-    setIsLoggedIn(false);
-    setCurrentUser(null);
-    setIsAdmin(false);
-    setCurrentPage('home');
-    showMessage('Logged out successfully', 'success');
-  };
-
-  const handleInvest = async () => {
-    const amount = parseFloat(investAmount);
-    if (!amount || amount <= 0) {
-      showMessage('Please enter a valid amount', 'error');
-      return;
-    }
-
-    const updatedUser = {
-      ...currentUser,
-      balance: currentUser.balance + amount,
-      totalInvested: currentUser.totalInvested + amount
-    };
-
-    await window.storage.set(`user:${currentUser.email}`, JSON.stringify(updatedUser));
-    setCurrentUser(updatedUser);
-    setInvestAmount('');
-    showMessage(`Successfully invested $${amount}!`, 'success');
-  };
-
-  const handleWithdrawRequest = async () => {
-    const amount = parseFloat(withdrawAmount);
-    if (!amount || amount <= 0) {
-      showMessage('Please enter a valid amount', 'error');
-      return;
-    }
-
-    if (amount > currentUser.balance) {
-      showMessage('Insufficient balance', 'error');
-      return;
-    }
-
-    const withdrawal = {
-      id: `wd_${Date.now()}`,
-      userId: currentUser.id,
-      userName: currentUser.name,
-      userEmail: currentUser.email,
-      amount,
-      status: 'pending',
-      date: new Date().toISOString()
-    };
-
-    const updatedUser = {
-      ...currentUser,
-      withdrawals: [...currentUser.withdrawals, withdrawal]
-    };
-
-    await window.storage.set(`user:${currentUser.email}`, JSON.stringify(updatedUser));
-    setCurrentUser(updatedUser);
-    setWithdrawAmount('');
-    showMessage('Withdrawal request submitted!', 'success');
-  };
-
-  const getAllUsers = async () => {
-    try {
-      const usersData = await window.storage.get('users_list');
-      const usersList = JSON.parse(usersData.value);
-      const users = [];
-      
-      for (const email of usersList) {
-        try {
-          const userData = await window.storage.get(`user:${email}`);
-          users.push(JSON.parse(userData.value));
-        } catch (error) {}
-      }
-      return users;
-    } catch (error) {
-      return [];
-    }
-  };
-
-  const handleApproveWithdrawal = async (userEmail, withdrawalId) => {
-    try {
-      const userData = await window.storage.get(`user:${userEmail}`);
-      const user = JSON.parse(userData.value);
-      
-      const withdrawal = user.withdrawals.find(w => w.id === withdrawalId);
-      if (withdrawal && withdrawal.status === 'pending') {
-        withdrawal.status = 'paid';
-        withdrawal.paidAt = new Date().toISOString();
-        user.balance -= withdrawal.amount;
-        await window.storage.set(`user:${userEmail}`, JSON.stringify(user));
-        showMessage('Withdrawal approved and marked as paid!', 'success');
-        
-        if (currentUser && currentUser.email === userEmail) {
-          setCurrentUser(user);
-        }
-      }
-    } catch (error) {
-      showMessage('Failed to approve withdrawal', 'error');
-    }
-  };
-
-  const copyReferralLink = () => {
-    const link = `${window.location.origin}${window.location.pathname}?ref=${currentUser.referralCode}`;
-    navigator.clipboard.writeText(link);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setCurrentPage(isLoggedIn ? (isAdmin ? 'admin' : 'dashboard') : 'home')}>
-            <div className="bg-blue-600 p-2 rounded-lg">
-              <TrendingUp className="text-white" size={24} />
-            </div>
-            <span className="text-2xl font-bold text-blue-600">ProfitLinker</span>
-          </div>
-          
-          <div className="hidden md:flex space-x-6 items-center">
-            {!isLoggedIn ? (
-              <>
-                <button onClick={() => setCurrentPage('home')} className="text-gray-700 hover:text-blue-600 font-medium">Home</button>
-                <button onClick={() => setCurrentPage('login')} className="text-gray-700 hover:text-blue-600 font-medium">Login</button>
-                <button onClick={() => setCurrentPage('register')} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">Sign Up</button>
-              </>
-            ) : (
-              <>
-                <span className="text-gray-700">Welcome, <span className="font-semibold">{currentUser?.name}</span></span>
-                {!isAdmin && <button onClick={() => setCurrentPage('dashboard')} className="text-gray-700 hover:text-blue-600 font-medium">Dashboard</button>}
-                {isAdmin && <button onClick={() => setCurrentPage('admin')} className="text-gray-700 hover:text-blue-600 font-medium">Admin Panel</button>}
-                <button onClick={handleLogout} className="flex items-center text-red-600 hover:text-red-700 font-medium">
-                  <LogOut size={18} className="mr-1" /> Logout
-                </button>
-              </>
-            )}
-          </div>
-
-          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden">
-            {menuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
-
-        {menuOpen && (
-          <div className="md:hidden bg-white border-t px-4 py-4 space-y-2">
-            {!isLoggedIn ? (
-              <>
-                <button onClick={() => { setCurrentPage('home'); setMenuOpen(false); }} className="block w-full text-left py-2 hover:text-blue-600">Home</button>
-                <button onClick={() => { setCurrentPage('login'); setMenuOpen(false); }} className="block w-full text-left py-2 hover:text-blue-600">Login</button>
-                <button onClick={() => { setCurrentPage('register'); setMenuOpen(false); }} className="block w-full bg-blue-600 text-white py-2 rounded-lg text-center">Sign Up</button>
-              </>
-            ) : (
-              <>
-                <div className="py-2 text-gray-700">Welcome, <span className="font-semibold">{currentUser?.name}</span></div>
-                {!isAdmin && <button onClick={() => { setCurrentPage('dashboard'); setMenuOpen(false); }} className="block w-full text-left py-2 hover:text-blue-600">Dashboard</button>}
-                {isAdmin && <button onClick={() => { setCurrentPage('admin'); setMenuOpen(false); }} className="block w-full text-left py-2 hover:text-blue-600">Admin Panel</button>}
-                <button onClick={() => { handleLogout(); setMenuOpen(false); }} className="block w-full text-left py-2 text-red-600">Logout</button>
-              </>
-            )}
-          </div>
-        )}
-      </header>
-
-      {message.text && (
-        <div className="max-w-7xl mx-auto px-4 mt-4">
-          <div className={`p-4 rounded-lg flex items-center shadow-md ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-            <AlertCircle size={20} className="mr-2 flex-shrink-0" />
-            <span>{message.text}</span>
-          </div>
-        </div>
-      )}
-
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {currentPage === 'home' && <HomePage setCurrentPage={setCurrentPage} />}
-        {currentPage === 'login' && <LoginPage loginEmail={loginEmail} setLoginEmail={setLoginEmail} loginPassword={loginPassword} setLoginPassword={setLoginPassword} handleLogin={handleLogin} setCurrentPage={setCurrentPage} />}
-        {currentPage === 'register' && <RegisterPage regName={regName} setRegName={setRegName} regEmail={regEmail} setRegEmail={setRegEmail} regPassword={regPassword} setRegPassword={setRegPassword} regReferrer={regReferrer} setRegReferrer={setRegReferrer} handleRegister={handleRegister} setCurrentPage={setCurrentPage} />}
-        {currentPage === 'dashboard' && <Dashboard user={currentUser} investAmount={investAmount} setInvestAmount={setInvestAmount} handleInvest={handleInvest} withdrawAmount={withdrawAmount} setWithdrawAmount={setWithdrawAmount} handleWithdrawRequest={handleWithdrawRequest} copyReferralLink={copyReferralLink} copied={copied} />}
-        {currentPage === 'admin' && <AdminPanel getAllUsers={getAllUsers} handleApproveWithdrawal={handleApproveWithdrawal} />}
-      </main>
-
-      <footer className="bg-gray-900 text-white py-8 mt-16">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-gray-400">© 2024 ProfitLinker. All rights reserved.</p>
-          <p className="text-gray-500 text-sm mt-2">Invest Smart, Earn More</p>
-        </div>
-      </footer>
-    </div>
-  );
-};
-
-const HomePage = ({ setCurrentPage }) => (
-  <div className="space-y-16">
-    <div className="text-center space-y-6 py-16">
-      <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight">Invest Smart, Earn More</h1>
-      <p className="text-xl text-gray-600 max-w-2xl mx-auto">Join thousands of investors growing their wealth with ProfitLinker. Invest, refer friends, and watch your earnings multiply.</p>
-      <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
-        <button onClick={() => setCurrentPage('register')} className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg hover:bg-blue-700 shadow-lg transition transform hover:scale-105">
-          Get Started Now
-        </button>
-        <button onClick={() => setCurrentPage('login')} className="border-2 border-blue-600 text-blue-600 px-8 py-4 rounded-lg text-lg hover:bg-blue-50 transition">
-          Login
-        </button>
-      </div>
-    </div>
-
-    <div className="grid md:grid-cols-3 gap-8">
-      <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition text-center">
-        <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-          <DollarSign className="text-blue-600" size={32} />
-        </div>
-        <h3 className="text-xl font-bold mb-3 text-gray-900">Invest Securely</h3>
-        <p className="text-gray-600">Make investments with confidence and watch your portfolio grow over time with our secure platform.</p>
-      </div>
-
-      <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition text-center">
-        <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Users className="text-blue-600" size={32} />
-        </div>
-        <h3 className="text-xl font-bold mb-3 text-gray-900">Refer & Earn</h3>
-        <p className="text-gray-600">Invite friends and earn $10 bonus rewards for every successful referral who joins.</p>
-      </div>
-
-      <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition text-center">
-        <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-          <TrendingUp className="text-blue-600" size={32} />
-        </div>
-        <h3 className="text-xl font-bold mb-3 text-gray-900">Track Growth</h3>
-        <p className="text-gray-600">Monitor your investments and earnings in real-time with our intuitive dashboard.</p>
-      </div>
-    </div>
-
-    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-12 rounded-2xl shadow-xl">
-      <h2 className="text-4xl font-bold mb-8 text-center">How It Works</h2>
-      <div className="grid md:grid-cols-4 gap-8 mt-8">
-        <div className="text-center">
-          <div className="bg-white text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">1</div>
-          <h4 className="font-semibold text-lg mb-2">Create Account</h4>
-          <p className="text-blue-100">Sign up in seconds and get your unique referral code</p>
-        </div>
-        <div className="text-center">
-          <div className="bg-white text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">2</div>
-          <h4 className="font-semibold text-lg mb-2">Make Investment</h4>
-          <p className="text-blue-100">Start with any amount and grow your portfolio</p>
-        </div>
-        <div className="text-center">
-          <div className="bg-white text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">3</div>
-          <h4 className="font-semibold text-lg mb-2">Refer Friends</h4>
-          <p className="text-blue-100">Share your link and earn $10 per referral</p>
-        </div>
-        <div className="text-center">
-          <div className="bg-white text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">4</div>
-          <h4 className="font-semibold text-lg mb-2">Withdraw Anytime</h4>
-          <p className="text-blue-100">Request withdrawal and get paid quickly</p>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-const LoginPage = ({ loginEmail, setLoginEmail, loginPassword, setLoginPassword, handleLogin, setCurrentPage }) => (
-  <div className="max-w-md mx-auto">
-    <div className="bg-white p-8 rounded-xl shadow-lg">
-      <h2 className="text-3xl font-bold mb-6 text-center text-gray-900">Welcome Back</h2>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-          <input 
-            type="email" 
-            value={loginEmail} 
-            onChange={(e) => setLoginEmail(e.target.value)} 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none" 
-            placeholder="your@email.com" 
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-          <input 
-            type="password" 
-            value={loginPassword} 
-            onChange={(e) => setLoginPassword(e.target.value)} 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none" 
-            placeholder="••••••••" 
-            onKeyPress={(e) => e.key === 'Enter' && handleLogin()} 
-          />
-        </div>
-        <button onClick={handleLogin} className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-semibold transition">
-          Login
-        </button>
-        <p className="text-center text-gray-600">
-          Don't have an account? <button onClick={() => setCurrentPage('register')} className="text-blue-600 hover:underline font-semibold">Sign Up</button>
-        </p>
-      </div>
-    </div>
-  </div>
-);
-
-const RegisterPage = ({ regName, setRegName, regEmail, setRegEmail, regPassword, setRegPassword, regReferrer, setRegReferrer, handleRegister, setCurrentPage }) => (
-  <div className="max-w-md mx-auto">
-    <div className="bg-white p-8 rounded-xl shadow-lg">
-      <h2 className="text-3xl font-bold mb-6 text-center text-gray-900">Create Account</h2>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-          <input 
-            type="text" 
-            value={regName} 
-            onChange={(e) => setRegName(e.target.value)} 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none" 
-            placeholder="John Doe" 
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-          <input 
-            type="email" 
-            value={regEmail} 
-            onChange={(e) => setRegEmail(e.target.value)} 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none" 
-            placeholder="your@email.com" 
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-          <input 
-            type="password" 
-            value={regPassword} 
-            onChange={(e) => setRegPassword(e.target.value)} 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none" 
-            placeholder="••••••••" 
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Referral Code (Optional)</label>
-          <input 
-            type="text" 
-            value={regReferrer} 
-            onChange={(e) => setRegReferrer(e.target.value.toUpperCase())} 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none" 
-            placeholder="XXXXXX" 
-          />
-        </div>
-        <button onClick={handleRegister} className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-semibold transition">
-          Create Account
-        </button>
-        <p className="text-center text-gray-600">
-          Already have an account? <button onClick={() => setCurrentPage('login')} className="text-blue-600 hover:underline font-semibold">Login</button>
-        </p>
-      </div>
-    </div>
-  </div>
-);
-
-const Dashboard = ({ user, investAmount, setInvestAmount, handleInvest, withdrawAmount, setWithdrawAmount, handleWithdrawRequest, copyReferralLink, copied }) => (
-  <div className="space-y-6">
-    <h2 className="text-3xl font-bold text-gray-900">Your Dashboard</h2>
-    
-    <div className="grid md:grid-cols-3 gap-6">
-      <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl shadow-lg text-white">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-blue-100">Total Balance</span>
-          <DollarSign size={24} />
-        </div>
-        <p className="text-4xl font-bold">${user?.balance?.toFixed(2) || '0.00'}</p>
-      </div>
-      
-      <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl shadow-lg text-white">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-green-100">Total Invested</span>
-          <TrendingUp size={24} />
-        </div>
-        <p className="text-4xl font-bold">${user?.totalInvested?.toFixed(2) || '0.00'}</p>
-      </div>
-      
-      <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl shadow-lg text-white">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-purple-100">Referral Earnings</span>
-          <Users size={24} />
-        </div>
-        <p className="text-4xl font-bold">${user?.referralEarnings?.toFixed(2) || '0.00'}</p>
-      </div>
-    </div>
-
-    <div className="grid md:grid-cols-2 gap-6">
-      <div className="bg-white p-6 rounded-xl shadow-lg">
-        <h3 className="text-xl font-bold mb-4 text-gray-900">Make Investment</h3>
-        <div className="space-y-4">
-          <input 
-            type="number" 
-            value={investAmount} 
-            onChange={(e) => setInvestAmount(e.target.value)} 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none" 
-            placeholder="Enter amount" 
-          />
-          <button onClick={handleInvest} className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-semibold transition">
-            Invest Now
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white p-6 rounded-xl shadow-lg">
-        <h3 className="text-xl font-bold mb-4 text-gray-900">Request Withdrawal</h3>
-        <div className="space-y-4">
-          <input 
-            type="number" 
-            value={withdrawAmount} 
-            onChange={(e) => setWithdrawAmount(e.target.value)} 
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none" 
-            placeholder="Enter amount" 
-          />
-          <button onClick={handleWithdrawRequest} className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold transition">
-            Request Withdrawal
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div className="bg-white p-6 rounded-xl shadow-lg">
-      <h3 className="text-xl font-bold mb-4 text-gray-900">Your Referral Link</h3>
-      <div className="flex flex-col sm:flex-row gap-3">
-        <input 
-          type="text" 
-          value={`${window.location.origin}${window.location.pathname}?ref=${user?.referralCode}`} 
-          readOnly 
-          className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 outline-none" 
-        />
-        <button onClick={copyReferralLink} className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold transition flex items-center justify-center">
-          {copied ? (
-            <>
-              <Check size={20} className="mr-2" /> Copied!
-            </>
-          ) : (
-            <>
-              <Copy size={20} className="mr-2" /> Copy
-            </>
-          )}
-        </button>
-      </div>
-      <p className="text-sm text-gray-600 mt-3">Share this link with friends and earn $10 for each referral!</p>
-      <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-        <p className="text-sm font-semibold text-blue-900">
-          Your Referral Code: <span className="text-2xl font-bold text-blue-600">{user?.referralCode}</span>
-        </p>
-        <p className="text-sm text-blue-700 mt-2">
-          Total Referrals: <span className="font-bold">{user?.referrals?.length || 0}</span>
-        </p>
-      </div>
-    </div>
-
-    <div className="bg-white p-6 rounded-xl shadow-lg">
-      <h3 className="text-xl font-bold mb-4 text-gray-900">Withdrawal History</h3>
-      {user?.withdrawals?.length > 0 ? (
-        <div className="space-y-3">
-          {user.withdrawals.map((w) => (
-            <div key={w.id} className="flex justify-between items-center p-4 border border-gray-200 rounded-lg">
-              <div>
-                <p className="font-semibold text-gray-900">${w.amount.toFixed(2)}</p>
-                <p className="text-sm text-gray-600">{new Date(w.date).toLocaleDateString()}</p>
-              </div>
-              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                w.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-              }`}>
-                {w.status === 'paid' ? 'Paid' : 'Pending'}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-gray-500 text-center py-8">No withdrawal requests yet</p>
-      )}
-    </div>
-  </div>
-);
-
-const AdminPanel = ({ getAllUsers, handleApproveWithdrawal }) => {
   const [users, setUsers] = useState([]);
+  const [withdrawals, setWithdrawals] = useState([]);
+  const [companyAccount, setCompanyAccount] = useState('0x1234...5678');
+  const [showRegister, setShowRegister] = useState(false);
+  const [greeting, setGreeting] = useState('');
+  const [formData, setFormData] = useState({});
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState('users');
+
+  const plans = [
+    { amount: 3000, return: 30000, days: 28, color: 'from-green-400 to-emerald-600' },
+    { amount: 10000, return: 100000, days: 28, color: 'from-blue-400 to-cyan-600' },
+    { amount: 25000, return: 250000, days: 28, color: 'from-purple-400 to-pink-600' },
+    { amount: 50000, return: 500000, days: 28, color: 'from-orange-400 to-red-600' },
+    { amount: 100000, return: 1000000, days: 28, color: 'from-indigo-400 to-violet-600' }
+  ];
 
   useEffect(() => {
-    loadUsers();
+    loadData();
   }, []);
 
-  const loadUsers = async () => {
+  useEffect(() => {
+    if (currentUser) {
+      const hour = new Date().getHours();
+      let greet = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
+      setGreeting(`${greet}, ${currentUser.name}! 🎉`);
+    }
+  }, [currentUser]);
+
+  const loadData = async () => {
     setLoading(true);
-    const allUsers = await getAllUsers();
-    setUsers(allUsers.filter(u => u.email !== 'admin@profitlinker.com'));
+    try {
+      const usersData = await window.storage.get('iep_users_v2', true);
+      const withdrawalsData = await window.storage.get('iep_withdrawals_v2', true);
+      const accountData = await window.storage.get('iep_company_account_v2', true);
+      
+      if (usersData) {
+        setUsers(JSON.parse(usersData.value));
+      } else {
+        const initialUsers = [{ 
+          id: 'admin', 
+          email: 'admin@investandearnpro.com', 
+          password: 'admin123', 
+          name: 'Admin',
+          phone: '+2348000000000',
+          isAdmin: true,
+          balance: 0,
+          referrals: 0,
+          investments: [],
+          createdAt: new Date().toISOString()
+        }];
+        setUsers(initialUsers);
+        await window.storage.set('iep_users_v2', JSON.stringify(initialUsers), true);
+      }
+      
+      if (withdrawalsData) {
+        setWithdrawals(JSON.parse(withdrawalsData.value));
+      } else {
+        await window.storage.set('iep_withdrawals_v2', JSON.stringify([]), true);
+      }
+      
+      if (accountData) {
+        setCompanyAccount(accountData.value);
+      } else {
+        await window.storage.set('iep_company_account_v2', '0x1234...5678', true);
+      }
+    } catch (error) {
+      console.log('Initializing new data', error);
+      const initialUsers = [{ 
+        id: 'admin', 
+        email: 'admin@investandearnpro.com', 
+        password: 'admin123', 
+        name: 'Admin',
+        phone: '+2348000000000',
+        isAdmin: true,
+        balance: 0,
+        referrals: 0,
+        investments: [],
+        createdAt: new Date().toISOString()
+      }];
+      setUsers(initialUsers);
+    }
     setLoading(false);
   };
 
-  const allWithdrawals = users.flatMap(user => 
-    user.withdrawals.map(w => ({
-      ...w,
-      userName: user.name,
-      userEmail: user.email
-    }))
-  ).sort((a, b) => new Date(b.date) - new Date(a.date));
+  const saveData = async () => {
+    try {
+      await window.storage.set('iep_users_v2', JSON.stringify(users), true);
+      await window.storage.set('iep_withdrawals_v2', JSON.stringify(withdrawals), true);
+      await window.storage.set('iep_company_account_v2', companyAccount, true);
+    } catch (error) {
+      console.error('Error saving data:', error);
+    }
+  };
 
-  const pendingWithdrawals = allWithdrawals.filter(w => w.status === 'pending');
+  useEffect(() => {
+    if (users.length > 0 && !loading) {
+      saveData();
+    }
+  }, [users, withdrawals, companyAccount]);
 
-  const totalInvested = users.reduce((sum, u) => sum + u.totalInvested, 0);
-  const totalBalance = users.reduce((sum, u) => sum + u.balance, 0);
-  const totalReferrals = users.reduce((sum, u) => sum + u.referrals.length, 0);
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const validatePhone = (phone) => {
+    const cleanPhone = phone.replace(/\s/g, '');
+    const re = /^(\+234|0)[789][01]\d{8}$/;
+    return re.test(cleanPhone);
+  };
+
+  const validatePassword = (password) => {
+    return password && password.length >= 6;
+  };
+
+  const handleRegister = async () => {
+    const newErrors = {};
+    
+    if (!formData.regName || formData.regName.trim().length < 3) {
+      newErrors.name = 'Name must be at least 3 characters';
+    }
+    
+    if (!formData.regEmail || !validateEmail(formData.regEmail)) {
+      newErrors.email = 'Please enter a valid email address';
+    } else {
+      const emailExists = users.some(u => u.email.toLowerCase() === formData.regEmail.toLowerCase().trim());
+      if (emailExists) {
+        newErrors.email = 'This email is already registered';
+      }
+    }
+    
+    if (!formData.regPhone || !validatePhone(formData.regPhone)) {
+      newErrors.phone = 'Please enter a valid Nigerian phone number (e.g., 08012345678)';
+    } else {
+      const phoneExists = users.some(u => u.phone === formData.regPhone.trim());
+      if (phoneExists) {
+        newErrors.phone = 'This phone number is already registered';
+      }
+    }
+    
+    if (!formData.regPassword || !validatePassword(formData.regPassword)) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    const newUser = {
+      id: Date.now().toString(),
+      email: formData.regEmail.toLowerCase().trim(),
+      phone: formData.regPhone.trim(),
+      password: formData.regPassword,
+      name: formData.regName.trim(),
+      referredBy: formData.referral ? formData.referral.trim() : null,
+      isAdmin: false,
+      balance: 0,
+      referrals: 0,
+      investments: [],
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedUsers = [...users, newUser];
+    setUsers(updatedUsers);
+    
+    try {
+      await window.storage.set('iep_users_v2', JSON.stringify(updatedUsers), true);
+    } catch (error) {
+      console.error('Error saving user:', error);
+    }
+    
+    setCurrentUser(newUser);
+    setShowRegister(false);
+    setFormData({});
+    setErrors({});
+    alert('🎉 Registration successful! Welcome to InvestAndEarnPro!');
+  };
+
+  const handleLogin = () => {
+    const newErrors = {};
+    
+    if (!formData.loginEmail) {
+      newErrors.loginEmail = 'Please enter your email';
+    } else if (!validateEmail(formData.loginEmail)) {
+      newErrors.loginEmail = 'Please enter a valid email address';
+    }
+    
+    if (!formData.loginPassword) {
+      newErrors.loginPassword = 'Please enter your password';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    
+    const user = users.find(u => 
+      u.email.toLowerCase() === formData.loginEmail.toLowerCase().trim() && 
+      u.password === formData.loginPassword
+    );
+    
+    if (user) {
+      setCurrentUser(user);
+      setFormData({});
+      setErrors({});
+    } else {
+      setErrors({ loginEmail: 'Invalid email or password' });
+    }
+  };
+
+  const handleInvest = async (plan) => {
+    if (!currentUser || currentUser.isAdmin) return;
+    
+    const updatedUsers = users.map(user => {
+      if (user.id === currentUser.id) {
+        const investment = {
+          plan,
+          date: new Date().toISOString(),
+          maturityDate: new Date(Date.now() + plan.days * 24 * 60 * 60 * 1000).toISOString()
+        };
+        return {
+          ...user,
+          investments: [...user.investments, investment]
+        };
+      }
+      
+      if (user.id === currentUser.referredBy) {
+        return { ...user, balance: user.balance + 1200, referrals: user.referrals + 1 };
+      }
+      
+      return user;
+    });
+    
+    setUsers(updatedUsers);
+    setCurrentUser(updatedUsers.find(u => u.id === currentUser.id));
+    
+    try {
+      await window.storage.set('iep_users_v2', JSON.stringify(updatedUsers), true);
+    } catch (error) {
+      console.error('Error saving investment:', error);
+    }
+    
+    alert(`✅ Investment of ₦${plan.amount.toLocaleString()} successful!\n\n💰 Returns: ₦${plan.return.toLocaleString()}\n⏰ Duration: ${plan.days} days`);
+  };
+
+  const handleWithdraw = async () => {
+    const amount = parseFloat(formData.withdrawAmount);
+    const account = formData.withdrawAccount;
+    
+    if (!amount || amount <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+    
+    if (!account || account.length < 10) {
+      alert('Please enter a valid account number (minimum 10 digits)');
+      return;
+    }
+    
+    if (amount > currentUser.balance) {
+      alert('Insufficient balance');
+      return;
+    }
+    
+    const withdrawal = {
+      id: Date.now().toString(),
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userEmail: currentUser.email,
+      userPhone: currentUser.phone,
+      amount,
+      account,
+      date: new Date().toISOString(),
+      status: 'pending'
+    };
+    
+    const updatedWithdrawals = [...withdrawals, withdrawal];
+    setWithdrawals(updatedWithdrawals);
+    
+    const updatedUsers = users.map(u => 
+      u.id === currentUser.id ? { ...u, balance: u.balance - amount } : u
+    );
+    setUsers(updatedUsers);
+    setCurrentUser(updatedUsers.find(u => u.id === currentUser.id));
+    
+    try {
+      await window.storage.set('iep_withdrawals_v2', JSON.stringify(updatedWithdrawals), true);
+      await window.storage.set('iep_users_v2', JSON.stringify(updatedUsers), true);
+    } catch (error) {
+      console.error('Error saving withdrawal:', error);
+    }
+    
+    setFormData({});
+    alert('✅ Withdrawal request submitted successfully! It will be processed within 24 hours.');
+  };
+
+  const deleteUser = async (userId) => {
+    if (window.confirm('⚠️ Are you sure you want to delete this user? This action cannot be undone.')) {
+      const updatedUsers = users.filter(u => u.id !== userId);
+      setUsers(updatedUsers);
+      
+      try {
+        await window.storage.set('iep_users_v2', JSON.stringify(updatedUsers), true);
+        alert('✅ User deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting user:', error);
+      }
+    }
+  };
+
+  const updateCompanyAccount = async () => {
+    if (!formData.newAccount || formData.newAccount.trim().length < 5) {
+      alert('Please enter a valid account');
+      return;
+    }
+    
+    setCompanyAccount(formData.newAccount);
+    
+    try {
+      await window.storage.set('iep_company_account_v2', formData.newAccount, true);
+      alert('✅ Company account updated successfully!');
+    } catch (error) {
+      console.error('Error updating account:', error);
+      alert('✅ Company account updated!');
+    }
+    
+    setFormData({});
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-white text-2xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 md:p-8">
+          <div className="text-center mb-6 md:mb-8">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-2xl inline-block mb-4">
+              <h1 className="text-2xl md:text-3xl font-bold">
+                InvestAndEarnPro
+              </h1>
+            </div>
+            <p className="text-gray-600 mt-2 text-sm md:text-base">Join 1,000,000+ successful investors worldwide</p>
+            <p className="text-green-600 font-semibold mt-2 text-sm md:text-base">🚀 Start earning today!</p>
+          </div>
+
+          {!showRegister ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                <input 
+                  value={formData.loginEmail || ''}
+                  onChange={(e) => {
+                    setFormData({...formData, loginEmail: e.target.value});
+                    setErrors({...errors, loginEmail: ''});
+                  }}
+                  type="email" 
+                  className={`w-full px-4 py-3 border ${errors.loginEmail ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
+                  placeholder="your@email.com"
+                />
+                {errors.loginEmail && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><XCircle size={14} /> {errors.loginEmail}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <input 
+                  value={formData.loginPassword || ''}
+                  onChange={(e) => {
+                    setFormData({...formData, loginPassword: e.target.value});
+                    setErrors({...errors, loginPassword: ''});
+                  }}
+                  type="password" 
+                  className={`w-full px-4 py-3 border ${errors.loginPassword ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
+                  placeholder="••••••••"
+                />
+                {errors.loginPassword && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><XCircle size={14} /> {errors.loginPassword}</p>}
+              </div>
+              <button onClick={handleLogin} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 md:py-4 rounded-xl font-semibold hover:opacity-90 transition shadow-lg">
+                Login to Dashboard
+              </button>
+              <button 
+                onClick={() => {
+                  setShowRegister(true);
+                  setErrors({});
+                  setFormData({});
+                }}
+                className="w-full text-blue-600 py-2 text-sm hover:underline"
+              >
+                Don't have an account? <span className="font-bold">Register Now</span>
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3 md:space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                <input 
+                  value={formData.regName || ''}
+                  onChange={(e) => {
+                    setFormData({...formData, regName: e.target.value});
+                    setErrors({...errors, name: ''});
+                  }}
+                  type="text" 
+                  className={`w-full px-4 py-3 border ${errors.name ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
+                  placeholder="John Doe"
+                />
+                {errors.name && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><XCircle size={14} /> {errors.name}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                <input 
+                  value={formData.regEmail || ''}
+                  onChange={(e) => {
+                    setFormData({...formData, regEmail: e.target.value});
+                    setErrors({...errors, email: ''});
+                  }}
+                  type="email" 
+                  className={`w-full px-4 py-3 border ${errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
+                  placeholder="john@example.com"
+                />
+                {errors.email && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><XCircle size={14} /> {errors.email}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                <input 
+                  value={formData.regPhone || ''}
+                  onChange={(e) => {
+                    setFormData({...formData, regPhone: e.target.value});
+                    setErrors({...errors, phone: ''});
+                  }}
+                  type="tel" 
+                  className={`w-full px-4 py-3 border ${errors.phone ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
+                  placeholder="08012345678"
+                />
+                {errors.phone && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><XCircle size={14} /> {errors.phone}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
+                <input 
+                  value={formData.regPassword || ''}
+                  onChange={(e) => {
+                    setFormData({...formData, regPassword: e.target.value});
+                    setErrors({...errors, password: ''});
+                  }}
+                  type="password" 
+                  className={`w-full px-4 py-3 border ${errors.password ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
+                  placeholder="Minimum 6 characters"
+                />
+                {errors.password && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><XCircle size={14} /> {errors.password}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Referral Code (Optional)</label>
+                <input 
+                  value={formData.referral || ''}
+                  onChange={(e) => setFormData({...formData, referral: e.target.value})}
+                  type="text" 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  placeholder="Enter referral code"
+                />
+              </div>
+              <button onClick={handleRegister} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 md:py-4 rounded-xl font-semibold hover:opacity-90 transition shadow-lg">
+                Create Account
+              </button>
+              <button 
+                onClick={() => {
+                  setShowRegister(false);
+                  setErrors({});
+                  setFormData({});
+                }}
+                className="w-full text-blue-600 py-2 text-sm hover:underline"
+              >
+                Already have an account? <span className="font-bold">Login</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (currentUser.isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200">
+        <nav className="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-4 shadow-xl">
+          <div className="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 className="text-xl md:text-2xl font-bold">⚡ Admin Dashboard</h1>
+            <button onClick={() => setCurrentUser(null)} className="flex items-center gap-2 bg-white/20 px-3 md:px-4 py-2 rounded-lg hover:bg-white/30 transition">
+              <LogOut size={20} /> Logout
+            </button>
+          </div>
+        </nav>
+
+        <div className="max-w-7xl mx-auto p-3 md:p-6 space-y-4 md:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-2xl shadow-xl">
+              <div className="flex items-center gap-3">
+                <Users size={40} />
+                <div>
+                  <p className="text-blue-100 text-sm">Total Users</p>
+                  <p className="text-4xl font-bold">{users.filter(u => !u.isAdmin).length}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-2xl shadow-xl">
+              <div className="flex items-center gap-3">
+                <TrendingUp size={40} />
+                <div>
+                  <p className="text-green-100 text-sm">Pending Withdrawals</p>
+                  <p className="text-4xl font-bold">{withdrawals.filter(w => w.status === 'pending').length}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-2xl shadow-xl">
+              <div className="flex items-center gap-3">
+                <Wallet size={40} />
+                <div>
+                  <p className="text-purple-100 text-sm">Total Investments</p>
+                  <p className="text-4xl font-bold">{users.reduce((sum, u) => sum + u.investments.length, 0)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Wallet className="text-orange-600" />
+              Company Account
+            </h2>
+            <div className="flex flex-col md:flex-row gap-2">
+              <input 
+                value={formData.newAccount !== undefined ? formData.newAccount : companyAccount}
+                onChange={(e) => setFormData({...formData, newAccount: e.target.value})}
+                type="text"
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500"
+                placeholder="Enter company account"
+              />
+              <button onClick={updateCompanyAccount} className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-xl hover:opacity-90 font-semibold shadow-lg">
+                Update Account
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <DollarSign className="text-green-600" />
+              Withdrawal Requests
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px]">
+                <thead>
+                  <tr className="border-b-2 border-gray-200 bg-gray-50">
+                    <th className="text-left p-3 font-semibold">User</th>
+                    <th className="text-left p-3 font-semibold">Contact</th>
+                    <th className="text-left p-3 font-semibold">Amount</th>
+                    <th className="text-left p-3 font-semibold">Account</th>
+                    <th className="text-left p-3 font-semibold">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {withdrawals.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="p-4 text-center text-gray-500">No withdrawal requests yet</td>
+                    </tr>
+                  ) : (
+                    withdrawals.map(w => (
+                      <tr key={w.id} className="border-b hover:bg-blue-50 transition">
+                        <td className="p-3 font-medium">{w.userName}</td>
+                        <td className="p-3 text-sm">
+                          <div>{w.userEmail}</div>
+                          <div className="text-gray-600">{w.userPhone}</div>
+                        </td>
+                        <td className="p-3 font-bold text-green-600">₦{w.amount.toLocaleString()}</td>
+                        <td className="p-3 text-sm font-mono">{w.account}</td>
+                        <td className="p-3 text-sm">{new Date(w.date).toLocaleDateString()}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900">Admin Dashboard</h2>
-        <button onClick={loadUsers} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-          Refresh
-        </button>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <nav className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white p-4 shadow-xl">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <h1 className="text-lg md:text-2xl font-bold">💎 InvestAndEarnPro</h1>
+          <button onClick={() => setCurrentUser(null)} className="flex items-center gap-2 bg-white/20 px-3 md:px-4 py-2 rounded-xl hover:bg-white/30 transition text-sm md:text-base backdrop-blur-sm">
+            <LogOut size={20} /> Logout
+          </button>
+        </div>
+      </nav>
 
-      <div className="grid md:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl shadow-lg text-white">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-blue-100">Total Users</span>
-            <Users size={24} />
-          </div>
-          <p className="text-4xl font-bold">{users.length}</p>
+      <div className="max-w-7xl mx-auto p-3 md:p-6 space-y-4 md:space-y-6">
+        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white p-6 md:p-8 rounded-3xl shadow-2xl">
+          <h2 className="text-2xl md:text-4xl font-bold mb-2">{greeting}</h2>
+          <p className="text-blue-100 text-sm md:text-base">Welcome back! Your financial freedom starts here 🚀</p>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl shadow-lg text-white">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-green-100">Total Invested</span>
-            <TrendingUp size={24} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+          <div className="bg-gradient-to-br from-green-400 to-emerald-600 text-white p-6 rounded-2xl shadow-xl transform hover:scale-105 transition">
+            <div className="flex items-center gap-3">
+              <Wallet size={40} className="opacity-90" />
+              <div>
+                <p className="text-green-100 text-xs md:text-sm">Available Balance</p>
+                <p className="text-2xl md:text-3xl font-bold">₦{currentUser.balance.toLocaleString()}</p>
+              </div>
+            </div>
           </div>
-          <p className="text-4xl font-bold">${totalInvested.toFixed(2)}</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl shadow-lg text-white">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-purple-100">Total Balance</span>
-            <DollarSign size={24} />
+          <div className="bg-gradient-to-br from-blue-400 to-cyan-600 text-white p-6 rounded-2xl shadow-xl transform hover:scale-105 transition">
+            <div className="flex items-center gap-3">
+              <TrendingUp size={40} className="opacity-90" />
+              <div>
+                <p className="text-blue-100 text-xs md:text-sm">Active Investments</p>
+                <p className="text-2xl md:text-3xl font-bold">{currentUser.investments.length}</p>
+              </div>
+            </div>
           </div>
-          <p className="text-4xl font-bold">${totalBalance.toFixed(2)}</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-xl shadow-lg text-white">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-orange-100">Total Referrals</span>
-            <Users size={24} />
-          </div>
-          <p className="text-4xl font-bold">{totalReferrals}</p>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="border-b border-gray-200">
-          <div className="flex">
-            <button 
-              onClick={() => setSelectedTab('users')} 
-              className={`flex-1 px-6 py-4 font-semibold transition ${
-                selectedTab === 'users' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              All Users ({users.length})
-            </button>
-            <button 
-              onClick={() => setSelectedTab('withdrawals')} 
-              className={`flex-1 px-6 py-4 font-semibold transition ${
-                selectedTab === 'withdrawals' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Withdrawals ({pendingWithdrawals.length} pending)
-            </button>
+          <div className="bg-gradient-to-br from-purple-400 to-pink-600 text-white p-6 rounded-2xl shadow-xl transform hover:scale-105 transition">
+            <div className="flex items-center gap-3">
+              <Users size={40} className="opacity-90" />
+              <div>
+                <p className="text-purple-100 text-xs md:text-sm">Total Referrals</p>
+                <p className="text-2xl md:text-3xl font-bold">{currentUser.referrals}</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="p-6">
-          {loading ? (
-            <p className="text-center text-gray-500 py-8">Loading...</p>
-          ) : (
-            <>
-              {selectedTab === 'users' && (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Balance</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Invested</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Referrals</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Joined</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map((user, idx) => (
-                        <tr key={user.id} className={`border-t ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                          <td className="px-4 py-3 text-sm text-gray-900">{user.name}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{user.email}</td>
-                          <td className="px-4 py-3 text-sm font-semibold text-green-600">${user.balance.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-sm font-semibold text-blue-600">${user.totalInvested.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{user.referrals.length}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{new Date(user.createdAt).toLocaleDateString()}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {users.length === 0 && (
-                    <p className="text-center text-gray-500 py-8">No users yet</p>
-                  )}
+        <div className="bg-white rounded-3xl shadow-2xl p-4 md:p-6">
+          <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center gap-2">
+            <TrendingUp className="text-blue-600" />
+            Investment Plans
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {plans.map((plan, idx) => (
+              <div key={idx} className="border-2 border-gray-200 rounded-2xl p-4 md:p-6 hover:border-blue-500 hover:shadow-2xl transition transform hover:scale-105">
+                <div className={`bg-gradient-to-br ${plan.color} text-white rounded-2xl p-4 mb-4 text-center`}>
+                  <DollarSign className="mx-auto mb-2" size={40} />
+                  <p className="text-3xl md:text-4xl font-bold">₦{plan.amount.toLocaleString()}</p>
+                  <p className="text-xs md:text-sm opacity-90 mt-1">Investment Amount</p>
                 </div>
-              )}
-
-              {selectedTab === 'withdrawals' && (
-                <div className="space-y-4">
-                  {allWithdrawals.map((w) => (
-                    <div key={w.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{w.userName}</p>
-                          <p className="text-sm text-gray-600">{w.userEmail}</p>
-                          <p className="text-sm text-gray-500 mt-1">{new Date(w.date).toLocaleString()}</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <p className="text-2xl font-bold text-gray-900">${w.amount.toFixed(2)}</p>
-                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mt-1 ${
-                              w.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {w.status === 'paid' ? 'Paid' : 'Pending'}
-                            </span>
-                          </div>
-                          {w.status === 'pending' && (
-                            <button 
-                              onClick={() => { 
-                                handleApproveWithdrawal(w.userEmail, w.id); 
-                                loadUsers(); 
-                              }} 
-                              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-semibold whitespace-nowrap"
-                            >
-                              Mark as Paid
-                            </button>
-                          )}
-                        </div>
-                      </div>
+                <div className="space-y-3 mb-4">
+                  <div className="bg-green-50 p-3 rounded-xl">
+                    <p className="text-sm text-gray-600">Returns</p>
+                    <p className="text-xl md:text-2xl font-bold text-green-600">₦{plan.return.toLocaleString()}</p>
+                  </div>
+                  <div className="flex justify-between items-center bg-blue-50 p-3 rounded-xl">
+                    <div>
+                      <p className="text-xs text-gray-600">Duration</p>
+                      <p className="font-bold text-blue-600">{plan.days} days</p>
                     </div>
-                  ))}
-                  {allWithdrawals.length === 0 && (
-                    <p className="text-center text-gray-500 py-8">No withdrawal requests yet</p>
-                  )}
+                    <div>
+                      <p className="text-xs text-gray-600">ROI</p>
+                      <p className="font-bold text-purple-600">{((plan.return / plan.amount - 1) * 100).toFixed(0)}%</p>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </>
-          )}
+                <button 
+                  onClick={() => handleInvest(plan)}
+                  className={`w-full bg-gradient-to-r ${plan.color} text-white py-3 md:py-4 rounded-xl font-semibold hover:opacity-90 transition shadow-lg text-sm md:text-base`}
+                >
+                  Invest Now 🚀
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl shadow-2xl p-4 md:p-6 text-white">
+            <h2 className="text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
+              <Wallet size={28} />
+              Withdraw Funds
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-green-100 mb-2">Amount (₦)</label>
+                <input 
+                  value={formData.withdrawAmount || ''}
+                  onChange={(e) => setFormData({...formData, withdrawAmount: e.target.value})}
+                  type="number"
+                  className="w-full px-4 py-3 border-2 border-white/30 bg-white/20 text-white placeholder-white/70 rounded-xl focus:ring-2 focus:ring-white focus:border-white backdrop-blur-sm"
+                  placeholder="Enter amount"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-green-100 mb-2">Bank Account Number</label>
+                <input 
+                  value={formData.withdrawAccount || ''}
+                  onChange={(e) => setFormData({...formData, withdrawAccount: e.target.value})}
+                  type="text"
+                  className="w-full px-4 py-3 border-2 border-white/30 bg-white/20 text-white placeholder-white/70 rounded-xl focus:ring-2 focus:ring-white focus:border-white backdrop-blur-sm"
+                  placeholder="Enter account number"
+                />
+              </div>
+              <button onClick={handleWithdraw} className="w-full bg-white text-green-600 py-3 md:py-4 rounded-xl font-bold hover:bg-green-50 transition shadow-lg">
+                Request Withdrawal 💰
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-3xl shadow-2xl p-4 md:p-6 text-white">
+            <h2 className="text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
+              <Users size={28} />
+              Referral Program
+            </h2>
+            <div className="bg-white/20 backdrop-blur-sm p-4 md:p-6 rounded-2xl mb-4 border-2 border-white/30">
+              <p className="text-purple-100 font-semibold mb-2 text-sm">Your Referral Code:</p>
+              <p className="text-2xl md:text-3xl font-bold mb-3 break-all">{currentUser.id}</p>
+              <p className="text-xs md:text-sm text-purple-100">💰 Earn ₦1,200 for each friend who invests!</p>
+            </div>
+            <div className="space-y-3">
+              <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl flex items-center justify-between border border-white/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm md:text-base">Total Referrals</span>
+                </div>
+                <span className="text-xl md:text-2xl font-bold">{currentUser.referrals}</span>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl flex items-center justify-between border border-white/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm md:text-base">Total Earnings</span>
+                </div>
+                <span className="text-xl md:text-2xl font-bold">₦{(currentUser.referrals * 1200).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-orange-400 to-red-500 text-white p-4 md:p-6 rounded-3xl shadow-2xl text-center">
+          <h3 className="text-xl md:text-2xl font-bold mb-2">🎉 Join Our Growing Community!</h3>
+          <p className="text-sm md:text-base opacity-90">Over 1,000,000 investors trust InvestAndEarnPro for secure and profitable investments</p>
         </div>
       </div>
     </div>
   );
 };
 
-export default ProfitLinker;
+export default InvestAndEarnPro;>
+              </table>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Users className="text-blue-600" />
+              All Registered Users
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[800px]">
+                <thead>
+                  <tr className="border-b-2 border-gray-200 bg-gray-50">
+                    <th className="text-left p-3 font-semibold">Name</th>
+                    <th className="text-left p-3 font-semibold">Email</th>
+                    <th className="text-left p-3 font-semibold">Phone</th>
+                    <th className="text-left p-3 font-semibold">Balance</th>
+                    <th className="text-left p-3 font-semibold">Referrals</th>
+                    <th className="text-left p-3 font-semibold">Joined</th>
+                    <th className="text-left p-3 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.filter(u => !u.isAdmin).length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="p-4 text-center text-gray-500">No users registered yet</td>
+                    </tr>
+                  ) : (
+                    users.filter(u => !u.isAdmin).map(u => (
+                      <tr key={u.id} className="border-b hover:bg-blue-50 transition">
+                        <td className="p-3 font-medium">{u.name}</td>
+                        <td className="p-3 text-sm">{u.email}</td>
+                        <td className="p-3 text-sm">{u.phone}</td>
+                        <td className="p-3 font-bold text-green-600">₦{u.balance.toLocaleString()}</td>
+                        <td className="p-3 text-center">{u.referrals}</td>
+                        <td className="p-3 text-sm">{new Date(u.createdAt).toLocaleDateString()}</td>
+                        <td className="p-3">
+                          <button 
+                            onClick={() => deleteUser(u.id)}
+                            className="text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded-lg transition"
+                          >
+                            <Trash2 size={20} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody
